@@ -1,0 +1,242 @@
+@import "tailwindcss";
+
+/* Dark mode is class-based so next-themes can toggle it (dark is the default). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ─────────────────────────────────────────────
+   Light palette on :root, dark palette on .dark.
+   All text/background pairs meet WCAG AA.  */
+:root {
+  --bg: #fafaf7;
+  --surface: #ffffff;
+  --surface-2: #f3f3ee;
+  --border: #e4e4de;
+  --border-strong: #cfcfc6;
+  --fg: #14161a;
+  --muted: #5a6270;
+  --accent: #ffb224; /* amber-700: 4.8:1 on --bg */
+  --accent-fg: #ffffff; /* text on accent fills */
+  --accent-soft: rgb(180 83 9 / 0.1);
+  --grid-line: rgb(20 22 26 / 0.05);
+  --noise-opacity: 0.025;
+}
+
+.dark {
+  --bg: #0b0d10;
+  --surface: #12151a;
+  --surface-2: #171b21;
+  --border: #1f242c;
+  --border-strong: #2d343e;
+  --fg: #e8eaed;
+  --muted: #9aa3ae; /* 7.6:1 on --bg */
+  --accent: #ffb224; /* signal amber */
+  --accent-fg: #0b0d10;
+  --accent-soft: rgb(255 178 36 / 0.12);
+  --grid-line: rgb(232 234 237 / 0.04);
+  --noise-opacity: 0.04;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+html {
+  /* Offset anchor jumps so headings aren't hidden under the sticky navbar. */
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── Background: faint grid that fades out, plus film-grain noise ── */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%);
+}
+
+.bg-noise {
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Blinking terminal caret (static when reduced motion is requested). */
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .caret {
+    animation: caret-blink 1.1s steps(1) infinite;
+  }
+}
+
+/* ── Motion system ─────────────────────────────────────────
+   Motion's hooks (useInView / useScroll) flip data attributes;
+   CSS does the animating. Everything is wrapped in
+   `prefers-reduced-motion: no-preference`, so reduced-motion users
+   simply get the final, static state. */
+@theme {
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes pulse-once {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero entrance: CSS-only so the LCP text never waits for JS. */
+  .rise-in {
+    animation: rise-in 0.5s var(--ease-out-expo) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  /* Section fade-up on scroll */
+  [data-reveal] {
+    transition:
+      opacity 0.5s var(--ease-out-expo),
+      transform 0.5s var(--ease-out-expo);
+  }
+  [data-reveal][data-inview="false"] {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  /* Quick stagger for lists of tags: children set --i */
+  .stagger > * {
+    transition:
+      opacity 0.3s ease-out,
+      transform 0.3s ease-out;
+    transition-delay: calc(150ms + var(--i, 0) * 30ms);
+  }
+  .stagger[data-inview="false"] > * {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  /* Timeline commit nodes pop in */
+  .commit-node {
+    transition:
+      transform 0.4s var(--ease-spring),
+      opacity 0.2s ease-out;
+  }
+  .commit-node[data-inview="false"] {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  /* Promotion tag pulses once when it appears */
+  .tag-pulse[data-inview="true"] {
+    animation: pulse-once 0.6s ease-out 0.3s 1;
+  }
+
+  /* Timeline progress line: scaled by scroll position from JS */
+  .git-progress {
+    transform: scaleY(0);
+  }
+
+  /* Terminal card: command types out, then lines appear one by one.
+     Desktop only — on phones the card sits below the hero text, and delaying
+     its content would push back Largest Contentful Paint. */
+  @media (min-width: 64rem) {
+    .term[data-phase="idle"] .term-cmd,
+    .term:not([data-phase="done"]) .term-line {
+      opacity: 0;
+      transform: translateX(-4px);
+    }
+    .term-line {
+      transition:
+        opacity 0.25s ease-out,
+        transform 0.25s ease-out;
+      transition-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
+
+  /* Card hover: slight lift (fine pointers only) */
+  @media (hover: hover) and (pointer: fine) {
+    .lift {
+      transition:
+        transform 0.25s var(--ease-out-expo),
+        border-color 0.25s ease-out;
+    }
+    .lift:hover {
+      transform: translateY(-3px);
+    }
+  }
+}
+
+/* Cursor-following amber glow on cards (fine pointers only).
+   --mx / --my are set by <PointerGlow />. */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+@media (hover: hover) and (pointer: fine) {
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      280px circle at var(--mx, 50%) var(--my, 50%),
+      var(--accent-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+    pointer-events: none;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+}
