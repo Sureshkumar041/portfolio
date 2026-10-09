@@ -96,9 +96,9 @@ export const portfolio: Portfolio = {
     experience: { label: "experience", title: "Where I've worked" },
     projects: {
       label: "projects",
-      title: "Selected projects",
+      title: "My recent work",
       description:
-        "Client and company work, so the source code is private. Expand a card for the full details.",
+        "Web and mobile apps I’ve built and shipped for real users. Source code is private, so expand a card to see what I did.",
     },
     education: { label: "education & learning", title: "Education & Learning" },
     contact: { label: "contact", title: "Get in touch" },
